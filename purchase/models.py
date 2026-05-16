@@ -10,7 +10,7 @@ class Supplier(models.Model):
         return self.name
 
 class Purchase(models.Model):
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    supplier = models.CharField(max_length=100)
     date = models.DateField(auto_now_add=True)
 
     def __str__(self):

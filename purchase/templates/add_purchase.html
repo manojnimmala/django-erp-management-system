@@ -2,8 +2,17 @@
 
 {% block content %}
 
-<h2>Add Purchase</h2>
+<div class="card">
+    <h2>Create Purchase</h2>
 
-...your form...
+    <form method="POST">
+    {% csrf_token %}
+
+    <label>Supplier Name:</label>
+    <input type="text" name="supplier">
+
+    <button type="submit">Create Purchase</button>
+</form>
+</div>
 
 {% endblock %}

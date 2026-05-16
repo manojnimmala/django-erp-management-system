@@ -1,22 +1,24 @@
 from django.shortcuts import render, redirect
-from .models import Purchase, Supplier, PurchaseItem
+from .models import Purchase, PurchaseItem
 from inventory.models import Product
 from django.contrib import messages
 
+
 def add_purchase(request):
-    suppliers = Supplier.objects.all()
-    
     if request.method == 'POST':
-        supplier_id = request.POST.get('supplier')
-        supplier = Supplier.objects.get(id=supplier_id)
-        
-        Purchase.objects.create(
+        supplier = request.POST.get('supplier')
+
+        if not supplier:
+            messages.error(request, "Supplier name is required")
+            return redirect('/purchase/add/')
+
+        purchase = Purchase.objects.create(
             supplier=supplier
         )
-        
-        return redirect('/purchase/add/')
-    return render(request, 'add_purchase.html', {'suppliers': suppliers})
 
+        return redirect(f'/purchase/item/{purchase.id}/')
+
+    return render(request, 'add_purchase.html')
 
 
 def add_purchase_item(request, id):
@@ -54,6 +56,7 @@ def add_purchase_item(request, id):
                 product=product
             ).first()
 
+            # increase stock
             product.quantity += quantity
             product.save()
 
@@ -83,7 +86,8 @@ def add_purchase_item(request, id):
         'items': items,
         'total': total
     })
-    
+
+
 def purchase_detail(request, id):
     purchase = Purchase.objects.get(id=id)
     items = PurchaseItem.objects.filter(purchase=purchase)
@@ -92,18 +96,19 @@ def purchase_detail(request, id):
         'purchase': purchase,
         'items': items
     })
-    
-    
+
+
 def purchase_list(request):
-    purchases = Purchase.objects.all()
+    purchases = Purchase.objects.all().order_by('-id')
+
     return render(request, 'purchase_list.html', {
         'purchases': purchases
     })
-    
+
+
 def delete_purchase_item(request, id):
     item = PurchaseItem.objects.get(id=id)
 
-    # decrease stock when deleting
     product = item.product
     product.quantity -= item.quantity
     product.save()
@@ -111,11 +116,13 @@ def delete_purchase_item(request, id):
     purchase_id = item.purchase.id
     item.delete()
 
+    messages.success(request, "Item deleted successfully")
+
     return redirect(f'/purchase/item/{purchase_id}/')
+
 
 def delete_purchase(request, id):
     purchase = Purchase.objects.get(id=id)
-
     items = PurchaseItem.objects.filter(purchase=purchase)
 
     for item in items:
@@ -125,4 +132,5 @@ def delete_purchase(request, id):
     purchase.delete()
 
     messages.success(request, "Purchase deleted successfully")
+
     return redirect('/purchase/')
